@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<title>Ton Miner</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- ✅ YOUR REAL MONETAG SDK -->
+<script src="//libtl.com/sdk.js" data-zone="11844717" data-sdk="show_11844717"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--gold:#ffc940;--text:#f4ecd8}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;
+  background:#000;color:var(--text);user-select:none;-webkit-user-select:none}
+
+#app{height:100vh;height:100dvh;position:relative;overflow:hidden;background:#000}
+
+/* ===== PAGES ===== */
+.page{
+  position:absolute;inset:0;display:none;
+  background-size:100% 100%;background-position:center;
+  background-repeat:no-repeat;overflow:hidden;
+}
+.page.active{display:block !important}
+
+#page-home  { background-image: url('home.jpg');  }
+#page-tasks { background-image: url('task.jpg');  }
+#page-refer { background-image: url('refer.jpg'); }
+
+/* ===== BALANCE — BOLD BROWN ===== */
+.balance-display{
+  position:absolute;color:#4a2a10;font-weight:900;text-align:center;
+  font-variant-numeric:tabular-nums;pointer-events:none;z-index:4;
+  letter-spacing:1px;
+  text-shadow:0 1px 0 rgba(255,220,160,.7),0 0 1px rgba(255,220,160,.5),0 2px 3px rgba(0,0,0,.35);
+}
+#page-home .balance-display{top:26%;left:18%;right:18%;font-size:30px;line-height:3.0}
+#page-tasks .balance-display{top:15.5%;left:26%;right:5%;font-size:19px;line-height:3.2}
+
+/* ===== TAP ZONES ===== */
+.tap{position:absolute;background:transparent;border:none;cursor:pointer;
+  z-index:6;-webkit-tap-highlight-color:transparent}
+.tap:active{background:rgba(255,255,255,.08)}
+
+#tap-withdraw{ left:8%;  bottom:21.5%; width:42%; height:8.5%; }
+#tap-invite{   right:8%; bottom:21.5%; width:42%; height:8.5%; }
+
+/* ===== TASK LIST ===== */
+#task-zones{
+  position:absolute;left:10%;right:10%;top:39.5%;height:44%;
+  display:flex;flex-direction:column;justify-content:space-between;z-index:6;
+}
+.task-zone{flex:1;margin:0.3% 0;position:relative;cursor:pointer;border-radius:16px}
+.task-zone:active{background:rgba(255,255,255,.06)}
+
+.task-text{position:absolute;inset:0;display:flex;align-items:center;
+  padding:0 20px;gap:14px;color:#fff;text-shadow:0 2px 4px #000;pointer-events:none}
+.task-text .ico{font-size:26px;flex-shrink:0;width:34px;text-align:center;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
+.task-text .info{flex:1;line-height:1.35;min-width:0}
+.task-text .info .name{font-size:15px;font-weight:900;color:#fff;
+  text-shadow:0 2px 4px #000;letter-spacing:.3px}
+.task-text .info .cnt{font-size:12px;font-weight:800;color:#ffd970;
+  text-shadow:0 1px 4px #000;margin-top:2px}
+.task-text .btn{background:linear-gradient(180deg,#ffd24d,#d9a418);
+  color:#2b1f00;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:900;
+  box-shadow:0 3px 0 #8a6410,0 2px 6px rgba(0,0,0,.6);
+  text-shadow:0 1px 0 rgba(255,255,255,.35);flex-shrink:0;border:1px solid #ffe082}
+.task-text.done .btn{background:linear-gradient(180deg,#6a6a6a,#3a3a3a);
+  color:#ccc;box-shadow:0 3px 0 #222;text-shadow:none;border:1px solid #888}
+
+/* ===== REFER ===== */
+#tap-copy{  left:10%;right:10%;bottom:24%;height:6%; }
+#tap-share{ left:10%;right:10%;bottom:17.5%;height:6%; }
+
+.ref-stats{position:absolute;top:57%;left:8%;right:8%;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;z-index:5;
+  text-align:center;color:#fff;font-weight:900;text-shadow:0 2px 6px #000;pointer-events:none}
+.ref-stats .col{display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-end;padding-bottom:12%}
+.ref-stats .n{font-size:22px;color:#fff;line-height:1}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{position:absolute;bottom:calc(1% + env(safe-area-inset-bottom));
+  left:3%;right:3%;height:11%;z-index:7;display:flex;gap:2%}
+.bottom-nav .nav-btn{flex:1;background:transparent;border:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;border-radius:14px}
+.bottom-nav .nav-btn:active{background:rgba(255,255,255,.12)}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;left:50%;bottom:16%;transform:translateX(-50%);
+  background:rgba(0,0,0,.94);color:var(--gold);padding:12px 22px;
+  border-radius:22px;font-size:13px;font-weight:700;border:1px solid var(--gold);
+  opacity:0;transition:opacity .3s;pointer-events:none;z-index:100;
+  max-width:80%;text-align:center}
+.toast.show{opacity:1}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;
+  align-items:center;justify-content:center;z-index:200;padding:24px}
+.modal-bg.show{display:flex}
+.modal{background:linear-gradient(160deg,#322a24,#1f1a16);
+  border:3px solid #b8892a;border-radius:18px;padding:22px 20px;
+  text-align:center;max-width:320px;width:100%;
+  box-shadow:0 10px 30px rgba(0,0,0,.85),0 0 40px rgba(255,201,64,.15)}
+.modal h2{color:var(--gold);font-size:18px;margin-bottom:10px;letter-spacing:1px}
+.modal p{font-size:14px;color:#e8e0d0;line-height:1.5;margin-bottom:16px}
+.modal .big{font-size:20px;color:var(--gold);font-weight:900;display:block;margin:8px 0}
+.modal button{background:linear-gradient(180deg,#ffd24d,#d9a418);color:#2b1f00;
+  border:none;border-radius:10px;padding:10px 22px;font-weight:900;font-size:14px;
+  cursor:pointer;box-shadow:0 3px 0 #8a6410;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= HOME ================= -->
+  <div class="page active" id="page-home">
+    <div class="balance-display" id="bal-home">0.00 TON</div>
+    <button class="tap" id="tap-withdraw"></button>
+    <button class="tap" id="tap-invite"></button>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" data-go="home"></button>
+      <button class="nav-btn" data-go="tasks"></button>
+      <button class="nav-btn" data-go="refer"></button>
+    </div>
+  </div>
+
+  <!-- ================= TASKS ================= -->
+  <div class="page" id="page-tasks">
+    <div class="balance-display" id="bal-tasks">0.00 TON</div>
+
+    <div id="task-zones">
+      <div class="task-zone" data-task="follow">
+        <div class="task-text" id="tt-follow">
+          <span class="ico">📢</span>
+          <div class="info">
+            <div class="name">Follow our channel</div>
+            <div class="cnt">+0.10 TON</div>
+          </div>
+          <span class="btn">Start</span>
+        </div>
+      </div>
+      <div class="task-zone" data-task="main">
+        <div class="task-text" id="tt-main">
+          <span class="ico">🎬</span>
+          <div class="info">
+            <div class="name">Watch ad</div>
+            <div class="cnt">+0.02 TON • 0/20</div>
+          </div>
+          <span class="btn">Watch</span>
+        </div>
+      </div>
+      <div class="task-zone" data-task="bonus">
+        <div class="task-text" id="tt-bonus">
+          <span class="ico">💎</span>
+          <div class="info">
+            <div class="name">Bonus ad</div>
+            <div class="cnt">+0.05 TON • 0/10</div>
+          </div>
+          <span class="btn">Watch</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" data-go="home"></button>
+      <button class="nav-btn" data-go="tasks"></button>
+      <button class="nav-btn" data-go="refer"></button>
+    </div>
+  </div>
+
+  <!-- ================= REFER ================= -->
+  <div class="page" id="page-refer">
+    <div class="ref-stats">
+      <div class="col"><div class="n" id="ref-friends">0</div></div>
+      <div class="col"><div class="n" id="ref-earned">0.00</div></div>
+      <div class="col"></div>
+    </div>
+
+    <button class="tap" id="tap-copy"></button>
+    <button class="tap" id="tap-share"></button>
+
+    <div class="bottom-nav">
+      <button class="nav-btn" data-go="home"></button>
+      <button class="nav-btn" data-go="tasks"></button>
+      <button class="nav-btn" data-go="refer"></button>
+    </div>
+  </div>
+
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-bg" id="withdraw-modal">
+  <div class="modal">
+    <h2>⛏️ WITHDRAW</h2>
+    <span class="big">Withdraw coming soon</span>
+    <p>Withdrawals will be enabled on</p>
+    <span class="big">20th November 2026</span>
+    <p style="font-size:12px;color:#a89b88">Keep mining until then — your TON is safe.</p>
+    <button id="withdraw-close">OK</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================
+   TELEGRAM
+========================================================== */
+const tg = window.Telegram?.WebApp;
+if (tg){
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor?.('#0a0705');
+  tg.setBackgroundColor?.('#0a0705');
+  tg.disableVerticalSwipes?.();
+}
+
+/* ==========================================================
+   CONFIG — YOUR REAL MONETAG ZONE
+========================================================== */
+const MONETAG_ZONE    = '11844717';
+const BOT_USERNAME    = 'tonminer123_bot';
+const CHANNEL_URL     = 'https://t.me/tonminer_bot1';
+const AD_REWARD_MAIN  = 0.02;
+const AD_REWARD_BONUS = 0.05;
+const MAIN_AD_LIMIT   = 20;
+const BONUS_AD_LIMIT  = 10;
+const MAIN_AD_REFILL  = 2 * 60 * 60 * 1000;
+const BONUS_AD_REFILL = 5 * 60 * 60 * 1000;
+const STORAGE_KEY     = 'tonminer_final';
+
+/* ==========================================================
+   STATE
+========================================================== */
+function defaultState(){
+  return {
+    balance: 0, friends: 0, earnedFromRefs: 0, tasksDone: [],
+    mainAdsUsed: 0,   mainAdsResetAt: Date.now(),
+    bonusAdsUsed: 0,  bonusAdsResetAt: Date.now()
+  };
+}
+let state = loadState();
+function loadState(){
+  try { const r=localStorage.getItem(STORAGE_KEY); if(r) return {...defaultState(), ...JSON.parse(r)}; }
+  catch(e){}
+  return defaultState();
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+/* ==========================================================
+   HELPERS
+========================================================== */
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toFixed(2);
+
+function toast(msg, ms=1900){
+  const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),ms);
+}
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>{
+    p.classList.remove('active'); p.style.display = 'none';
+  });
+  const target = $('page-'+name);
+  if (target){ target.style.display = 'block'; target.classList.add('active'); }
+  refreshUI();
+  tg?.HapticFeedback?.selectionChanged();
+}
+
+/* ==========================================================
+   UI REFRESH
+========================================================== */
+function refreshUI(){
+  const b = fmt(state.balance) + ' TON';
+  if ($('bal-home'))  $('bal-home').textContent  = b;
+  if ($('bal-tasks')) $('bal-tasks').textContent = b;
+  if ($('ref-friends')) $('ref-friends').textContent = state.friends;
+  if ($('ref-earned'))  $('ref-earned').textContent  = fmt(state.earnedFromRefs);
+
+  adsLeft('mainAdsUsed',  'mainAdsResetAt',  MAIN_AD_LIMIT,  MAIN_AD_REFILL);
+  adsLeft('bonusAdsUsed', 'bonusAdsResetAt', BONUS_AD_LIMIT, BONUS_AD_REFILL);
+
+  const tFollow = $('tt-follow');
+  if (tFollow && state.tasksDone.includes('follow')){
+    tFollow.querySelector('.cnt').textContent = 'Completed ✓';
+    tFollow.querySelector('.btn').textContent = 'Done';
+    tFollow.classList.add('done');
+    tFollow.closest('.task-zone').style.pointerEvents = 'none';
+  }
+  if ($('tt-main')){
+    $('tt-main').querySelector('.cnt').textContent =
+      `+${AD_REWARD_MAIN.toFixed(2)} TON • ${state.mainAdsUsed}/${MAIN_AD_LIMIT}`;
+    if (state.mainAdsUsed >= MAIN_AD_LIMIT){
+      $('tt-main').querySelector('.btn').textContent = 'Full';
+      $('tt-main').classList.add('done');
+      $('tt-main').closest('.task-zone').style.pointerEvents = 'none';
+    }
+  }
+  if ($('tt-bonus')){
+    $('tt-bonus').querySelector('.cnt').textContent =
+      `+${AD_REWARD_BONUS.toFixed(2)} TON • ${state.bonusAdsUsed}/${BONUS_AD_LIMIT}`;
+    if (state.bonusAdsUsed >= BONUS_AD_LIMIT){
+      $('tt-bonus').querySelector('.btn').textContent = 'Full';
+      $('tt-bonus').classList.add('done');
+      $('tt-bonus').closest('.task-zone').style.pointerEvents = 'none';
+    }
+  }
+}
+
+function adsLeft(usedKey, resetKey, limit, refillMs){
+  const now = Date.now();
+  if (now - state[resetKey] >= refillMs){
+    state[usedKey] = 0; state[resetKey] = now; saveState();
+  }
+  return limit - state[usedKey];
+}
+
+/* ==========================================================
+   WITHDRAW
+========================================================== */
+$('tap-withdraw').addEventListener('click', ()=>{
+  $('withdraw-modal').classList.add('show');
+  tg?.HapticFeedback?.impactOccurred('medium');
+});
+$('withdraw-close').addEventListener('click', ()=>$('withdraw-modal').classList.remove('show'));
+$('withdraw-modal').addEventListener('click', e=>{
+  if (e.target.id === 'withdraw-modal') $('withdraw-modal').classList.remove('show');
+});
+
+/* ==========================================================
+   NAVIGATION
+========================================================== */
+$('tap-invite').addEventListener('click', ()=>showPage('refer'));
+
+document.querySelectorAll('.bottom-nav').forEach(nav=>{
+  const btns = nav.querySelectorAll('.nav-btn');
+  if (btns[0]) btns[0].addEventListener('click', ()=>showPage('home'));
+  if (btns[1]) btns[1].addEventListener('click', ()=>showPage('tasks'));
+  if (btns[2]) btns[2].addEventListener('click', ()=>showPage('refer'));
+});
+
+/* ==========================================================
+   TASKS
+========================================================== */
+document.querySelectorAll('.task-zone').forEach(zone=>{
+  zone.addEventListener('click', ()=>{
+    const t = zone.dataset.task;
+    if (t === 'follow') taskFollow();
+    if (t === 'main')   playAd('main');
+    if (t === 'bonus')  playAd('bonus');
+  });
+});
+
+function taskFollow(){
+  if (tg) tg.openTelegramLink(CHANNEL_URL);
+  else window.open(CHANNEL_URL, '_blank');
+  setTimeout(()=>{
+    if (!state.tasksDone.includes('follow')){
+      state.tasksDone.push('follow');
+      state.balance += 0.10;
+      saveState(); refreshUI();
+      toast('+0.10 TON earned!');
+      tg?.HapticFeedback?.notificationOccurred('success');
+    }
+  }, 3000);
+}
+
+/* ==========================================================
+   MONETAG — REAL AD
+   Uses show_11844717() exactly as Monetag documented.
+========================================================== */
+function playAd(type){
+  const isBonus = type === 'bonus';
+
+  const left = adsLeft(
+    isBonus ? 'bonusAdsUsed' : 'mainAdsUsed',
+    isBonus ? 'bonusAdsResetAt' : 'mainAdsResetAt',
+    isBonus ? BONUS_AD_LIMIT : MAIN_AD_LIMIT,
+    isBonus ? BONUS_AD_REFILL : MAIN_AD_REFILL
+  );
+  if (left <= 0){ toast('No ads left. Wait for refill.'); return; }
+
+  const showAd = window['show_' + MONETAG_ZONE];
+
+  if (typeof showAd !== 'function'){
+    toast('Ad not available. Please try again.');
+    return;
+  }
+
+  // ✅ REAL AD — reward only on success
+  showAd()
+    .then(()=>{
+      if (isBonus){
+        if (state.bonusAdsUsed >= BONUS_AD_LIMIT) return;
+        state.bonusAdsUsed++;
+        state.balance += AD_REWARD_BONUS;
+        toast(`+${AD_REWARD_BONUS.toFixed(2)} TON from bonus ad!`);
+      } else {
+        if (state.mainAdsUsed >= MAIN_AD_LIMIT) return;
+        state.mainAdsUsed++;
+        state.balance += AD_REWARD_MAIN;
+        toast(`+${AD_REWARD_MAIN.toFixed(2)} TON from ad!`);
+      }
+      saveState(); refreshUI();
+      tg?.HapticFeedback?.notificationOccurred('success');
+    })
+    .catch(()=>{
+      toast('Ad not completed. No reward.');
+    });
+}
+
+/* ==========================================================
+   REFERRALS
+========================================================== */
+function getRefLink(){
+  const id = tg?.initDataUnsafe?.user?.id || '8856414409';
+  return `https://t.me/${BOT_USERNAME}?start=${id}`;
+}
+$('tap-copy').addEventListener('click', async ()=>{
+  const link = getRefLink();
+  try { await navigator.clipboard.writeText(link); }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = link;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  toast('Referral link copied!');
+  tg?.HapticFeedback?.impactOccurred('medium');
+});
+$('tap-share').addEventListener('click', ()=>{
+  const link = getRefLink();
+  const text = '⛏️ Join me on TON Miner and start earning TON!';
+  const url  = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+  if (tg) tg.openTelegramLink(url);
+  else window.open(url, '_blank');
+});
+
+/* ==========================================================
+   INIT
+========================================================== */
+showPage('home');
+refreshUI();
+saveState();
+setInterval(()=>{ refreshUI(); saveState(); }, 60000);
+window.addEventListener('beforeunload', saveState);
+</script>
+</body>
+</html>
