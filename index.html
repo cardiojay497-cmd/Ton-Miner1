@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
 <title>Ton Miner</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- ✅ YOUR REAL MONETAG SDK -->
 <script src="//libtl.com/sdk.js" data-zone="11844717" data-sdk="show_11844717"></script>
 
 <style>
@@ -18,9 +17,12 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
 
 /* ===== PAGES ===== */
 .page{
-  position:absolute;inset:0;display:none;
-  background-size:100% 100%;background-position:center;
-  background-repeat:no-repeat;overflow:hidden;
+  position:absolute;inset:0;
+  display:none;
+  background-size:100% 100%;
+  background-position:center;
+  background-repeat:no-repeat;
+  overflow:hidden;
 }
 .page.active{display:block !important}
 
@@ -28,15 +30,70 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
 #page-tasks { background-image: url('task.jpg');  }
 #page-refer { background-image: url('refer.jpg'); }
 
-/* ===== BALANCE — BOLD BROWN ===== */
-.balance-display{
-  position:absolute;color:#4a2a10;font-weight:900;text-align:center;
-  font-variant-numeric:tabular-nums;pointer-events:none;z-index:4;
-  letter-spacing:1px;
-  text-shadow:0 1px 0 rgba(255,220,160,.7),0 0 1px rgba(255,220,160,.5),0 2px 3px rgba(0,0,0,.35);
+/* Fallback gradient if images fail to load */
+#app::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(160deg,#2a1a0a,#0a0705);
+  z-index:0;
 }
-#page-home .balance-display{top:26%;left:18%;right:18%;font-size:30px;line-height:3.0}
-#page-tasks .balance-display{top:15.5%;left:26%;right:5%;font-size:19px;line-height:3.2}
+
+/* ===== BALANCE — FORCE-CENTERED WRAPPER ===== */
+.balance-wrap{
+  position:absolute;
+  z-index:4;
+  pointer-events:none;
+  /* This wrapper is a tight box centered on the stone box */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  /* Reset everything that could shift text */
+  text-align:center;
+  padding:0;
+  margin:0;
+}
+
+.balance-display{
+  color:#4a2a10;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0 !important;
+  word-spacing:0;
+  text-align:center !important;
+  text-indent:0 !important;
+  padding:0;
+  margin:0;
+  line-height:1;
+  /* subtle emboss — no horizontal offset */
+  text-shadow:
+    0 1px 0 rgba(255,220,160,.7),
+    0 2px 3px rgba(0,0,0,.4);
+  /* Force inline-block so text-align on parent works */
+  display:inline-block;
+  width:auto;
+}
+
+/* HOME balance — center of the big stone box */
+#page-home .balance-wrap{
+  top:25%;
+  left:15%;
+  right:15%;
+  height:12%;
+}
+#page-home .balance-display{
+  font-size:30px;
+}
+
+/* TASKS balance — center of the small stone box */
+#page-tasks .balance-wrap{
+  top:12%;
+  left:20%;
+  right:8%;
+  height:8%;
+}
+#page-tasks .balance-display{
+  font-size:18px;
+}
 
 /* ===== TAP ZONES ===== */
 .tap{position:absolute;background:transparent;border:none;cursor:pointer;
@@ -116,9 +173,11 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
 
 <div id="app">
 
-  <!-- ================= HOME ================= -->
+  <!-- HOME -->
   <div class="page active" id="page-home">
-    <div class="balance-display" id="bal-home">0.00 TON</div>
+    <div class="balance-wrap">
+      <div class="balance-display" id="bal-home">0.00 TON</div>
+    </div>
     <button class="tap" id="tap-withdraw"></button>
     <button class="tap" id="tap-invite"></button>
 
@@ -129,9 +188,11 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
     </div>
   </div>
 
-  <!-- ================= TASKS ================= -->
+  <!-- TASKS -->
   <div class="page" id="page-tasks">
-    <div class="balance-display" id="bal-tasks">0.00 TON</div>
+    <div class="balance-wrap">
+      <div class="balance-display" id="bal-tasks">0.00 TON</div>
+    </div>
 
     <div id="task-zones">
       <div class="task-zone" data-task="follow">
@@ -173,14 +234,13 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
     </div>
   </div>
 
-  <!-- ================= REFER ================= -->
+  <!-- REFER -->
   <div class="page" id="page-refer">
     <div class="ref-stats">
       <div class="col"><div class="n" id="ref-friends">0</div></div>
       <div class="col"><div class="n" id="ref-earned">0.00</div></div>
       <div class="col"></div>
     </div>
-
     <button class="tap" id="tap-copy"></button>
     <button class="tap" id="tap-share"></button>
 
@@ -213,15 +273,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Segoe UI',Robot
 ========================================================== */
 const tg = window.Telegram?.WebApp;
 if (tg){
-  tg.ready();
-  tg.expand();
+  tg.ready(); tg.expand();
   tg.setHeaderColor?.('#0a0705');
   tg.setBackgroundColor?.('#0a0705');
   tg.disableVerticalSwipes?.();
 }
 
 /* ==========================================================
-   CONFIG — YOUR REAL MONETAG ZONE
+   CONFIG
 ========================================================== */
 const MONETAG_ZONE    = '11844717';
 const BOT_USERNAME    = 'tonminer123_bot';
@@ -232,7 +291,7 @@ const MAIN_AD_LIMIT   = 20;
 const BONUS_AD_LIMIT  = 10;
 const MAIN_AD_REFILL  = 2 * 60 * 60 * 1000;
 const BONUS_AD_REFILL = 5 * 60 * 60 * 1000;
-const STORAGE_KEY     = 'tonminer_final';
+const STORAGE_KEY     = 'tonminer_v14';
 
 /* ==========================================================
    STATE
@@ -264,10 +323,14 @@ function toast(msg, ms=1900){
 }
 function showPage(name){
   document.querySelectorAll('.page').forEach(p=>{
-    p.classList.remove('active'); p.style.display = 'none';
+    p.classList.remove('active');
+    p.style.display = 'none';
   });
   const target = $('page-'+name);
-  if (target){ target.style.display = 'block'; target.classList.add('active'); }
+  if (target){
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
   refreshUI();
   tg?.HapticFeedback?.selectionChanged();
 }
@@ -315,7 +378,9 @@ function refreshUI(){
 function adsLeft(usedKey, resetKey, limit, refillMs){
   const now = Date.now();
   if (now - state[resetKey] >= refillMs){
-    state[usedKey] = 0; state[resetKey] = now; saveState();
+    state[usedKey] = 0;
+    state[resetKey] = now;
+    saveState();
   }
   return limit - state[usedKey];
 }
@@ -371,8 +436,7 @@ function taskFollow(){
 }
 
 /* ==========================================================
-   MONETAG — REAL AD
-   Uses show_11844717() exactly as Monetag documented.
+   MONETAG — REWARDED POPUP
 ========================================================== */
 function playAd(type){
   const isBonus = type === 'bonus';
@@ -392,8 +456,7 @@ function playAd(type){
     return;
   }
 
-  // ✅ REAL AD — reward only on success
-  showAd()
+  showAd('pop')
     .then(()=>{
       if (isBonus){
         if (state.bonusAdsUsed >= BONUS_AD_LIMIT) return;
@@ -409,7 +472,8 @@ function playAd(type){
       saveState(); refreshUI();
       tg?.HapticFeedback?.notificationOccurred('success');
     })
-    .catch(()=>{
+    .catch((e)=>{
+      console.error('Ad error:', e);
       toast('Ad not completed. No reward.');
     });
 }
@@ -443,9 +507,16 @@ $('tap-share').addEventListener('click', ()=>{
 /* ==========================================================
    INIT
 ========================================================== */
-showPage('home');
-refreshUI();
-saveState();
+function init(){
+  refreshUI();
+  showPage('home');
+  saveState();
+}
+
+init();
+setTimeout(init, 300);
+setTimeout(init, 1000);
+
 setInterval(()=>{ refreshUI(); saveState(); }, 60000);
 window.addEventListener('beforeunload', saveState);
 </script>
